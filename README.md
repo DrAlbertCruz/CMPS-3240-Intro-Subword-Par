@@ -5,6 +5,26 @@ An introduction to Intel's SSE2 instruction set at the assembly level
 
 ## Background
 
+### SIMD Operations
+
+```shell
+$ for i in {1..3}; do time ./bench_dewvm.out; done;
+
+real    0m0.877s
+user    0m0.460s
+sys     0m0.416s
+
+real    0m0.823s
+user    0m0.452s
+sys     0m0.368s
+
+real    0m0.881s
+user    0m0.484s
+sys     0m0.396s
+```
+
+### Addressing in x86
+
 For this lab you will need to know advanced memory addressing in x86 GAS. The following example was taken from this reference.<sup>1</sup>
 
 ```x86
