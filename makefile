@@ -12,8 +12,5 @@ test_dewvm.o: test_dewvm.c myblas.h
 myblas.o: myblas.s myblas.h
 	$(CC) $(FLAGS) -c $^
 
-myblas.s: myblas.c myblas.h
-	$(CC) $(FLAGS) -S -o $@ $<
-	
 clean:
 	rm -f *.o *.out *.s
