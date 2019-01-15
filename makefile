@@ -13,4 +13,4 @@ myblas.o: myblas.s myblas.h
 	$(CC) $(FLAGS) -c $^
 
 clean:
-	rm -f *.o *.out *.s
+	rm -f *.o *.out
