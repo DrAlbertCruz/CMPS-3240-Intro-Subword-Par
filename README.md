@@ -46,7 +46,7 @@ Recall from lecture that there are a type of instruction called SIMD, which stan
 This introduces the constraint that the array size must be a multiple of N, but potentially improves execution time by a factor of 1/N. Though, not quite, as there is some overhead introduced by packing and unpacking the arrays. I get the following result on `odin.cs.csubak.edu` when I alter the code to make use of SSE2 SIMD instructions:
 
 ```shell
-for i in {1..3}; do time ./bench_dewvm.out; done;
+$ for i in {1..3}; do time ./bench_dewvm.out; done;
 
 real    0m0.716s
 user    0m0.284s
