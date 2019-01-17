@@ -19,5 +19,10 @@ test_dewvm.o: test_dewvm.c myblas.h
 myblas.o: myblas.s myblas.h
 	$(CC) $(FLAGS) -c $^
 
+# Target to generate myblas.s. Only necessary if you're in another environment (hence why its
+# not included in the 'all' target).
+assemble: myblas.c
+	$(CC) $(FLAGS) -S myblas.s -c $<
+
 clean:
-	rm -f *.o *.out
+	rm -f *.o *.out myblas.s
