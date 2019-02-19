@@ -208,11 +208,11 @@ The final part of the code is on line 45:
 
 ```x86
     mulpd   %xmm1, %xmm0    # Multiply two scalars
-    movpd   %xmm0, (%rax)   # Store result back into *(result + i*8)
+    movupd   %xmm0, (%rax)   # Store result back into *(result + i*8)
     addl    $2, -4(%rbp)    # i++
 ```
 
-The `pd` suffix tells the processor that the contents of the MM registers are vectors, not scalars, and will operate on the first halves and then the second halves. This applies to both the multiplication with `mulpd` and storing two values into memory with `movpd` rather than just 1. Note that since each operation does twice the work, we need to increment `i+=2` instead of just one. 
+The `pd` suffix tells the processor that the contents of the MM registers are vectors, not scalars, and will operate on the first halves and then the second halves. This applies to both the multiplication with `mulpd` and storing two values into memory with `movupd` rather than just 1. Note that since each operation does twice the work, we need to increment `i+=2` instead of just one. 
 
 ## Part 2 - Assemble, test and bench
 
