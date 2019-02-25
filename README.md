@@ -28,15 +28,16 @@ This lab requires a CPU that has the SSE instruction set. It was originally intr
 
 ```shell
 $ cat /proc/cpuinfo | grep "sse"
+flags		: ... sse sse2 ...
 ```
 
-and look for `sse` under the `flags` field. Again, you'll most likely have it unless you're using a Mac that has a PowerPC processor or you're doing this on a system-on-chip with an ARM processor (Raspberry Pi). In those scenarios you'll have a bigger problem: you don't have an Intel or AMD x86 processor.
+and look for `sse` and `sse2` under the `flags` field. Again, you'll most likely have it unless you're using a Mac that has a PowerPC processor or you're doing this on a system-on-chip with an ARM processor (Raspberry Pi). In those scenarios you'll have a bigger problem: you don't have an Intel or AMD x86 processor.
 
 ### Compatability
 
 | Linux | Mac | Windows |
 | :--- | :--- | :--- |
-| Yes<sup>*</sup> | Untested<sup>*‡</sup> | Untested<sup>*</sup> |
+| Yes | Yes<sup>*‡</sup> | Untested<sup>*</sup> |
 
 <sup>*</sup>This lab should work across all environments, assuming you set up `gcc` correctly. The lab manuel is written for `odin.cs.csubak.edu`, but it should not be too much of a stretch in other environments. The only concern is if you're using Windows, you need to use `movapd` instead of `movupd` (notice the subtle difference with the `a` and the `u`. Windows stores SIMD arrays in a particular way (aligned) that is different from POSIX OS (unaligned).
 
@@ -47,7 +48,6 @@ and look for `sse` under the `flags` field. Again, you'll most likely have it un
 The topic of today's lab is the optimization of an element-wise vector multiplication. For this lab I will call the operation *DEWVM* but this is not a standard notation. It takes two vectors of identical size and steps through the arrays, multiplying it element by element and storing the result in a third array:
 
 ```c
-.
 int dewvm( int N, double *x, double *y, double *result ) {
     for( int i = 0; i < N; i++ )
         result[i] = x[i] * y[i];
@@ -74,10 +74,10 @@ user    0m0.484s
 sys     0m0.396s
 ```
 
-Recall from lecture that there are a type of instruction called SIMD, which stands for single instruction multiple datapath (SIMD). The SIMD instruction set we will be using today is called SSE, and it was introduced with the Pentium 4. Essentially, when iterating an arithmetic operation over an array, rather than carry it out one index at a time, we can:
+Recall from lecture that there are a type of instructions called SIMD, which stands for single instruction multiple datapath (SIMD). The SIMD instruction set we will be using today is called SSE, and it was introduced with the Pentium 4. Essentially, when iterating an arithmetic operation over an array, rather than carry it out one index at a time, we can:
 
 1. Grab N values from the arrays and place them into a single, large register that can fit them all. The oversized registers in x86 are called *multimedia registers* (MM), so called because they were originally introduced to give better performance and fidelity for--as you might have guessed, multimedia programs. The process of stuffing the MM registers with many variables is called *packing*. An MM register is *packed* if it contains many smaller values inside of it.
-1. Carry out a single arithmetic operation, that will be carried out on all the values in the oversized register. So, rather than carry out N arithmetic operations, we carry out only 1. 
+1. Carry out a single arithmetic operation, that will be carried out on all the values in the oversized register. So, rather than carry out N arithmetic operations on N data points, we carry out only 1 arithmetic operation that automatically operates on N data points. 
 1. *Unpack* the MM register by placing the items back in order into memory.
 
 This introduces the constraint that the array size must be a multiple of N, but potentially improves execution time by a factor of 1/N. Though, not quite, as there is some overhead introduced by packing and unpacking the arrays. I get the following result on `odin.cs.csubak.edu` when I alter the code to make use of SSE SIMD instructions:
@@ -181,7 +181,7 @@ SSE operates on 128-bit instructions. You might have noticed that the smallest M
 What we need to do here is modify the last command so that instead of fetching just `x[i]`, we fetch both `x[i]` and `x[i+1]`. We do this with the `movupd` command in POSIX or `movapd` in Windows:
 
 ```x86
-    movupd   (%rdx), %xmm1       # Line 30
+    movupd   (%rdx), %xmm1       # Line 30, previously just movsd
 ```
 
 That's it. The processor will handle placing the two values `x[i]` and `x[i+1]` into the double-wide register `%xmm1`. From above, we do not need to change the register notation to be larger because the smallest MM register can already accomodate two double precision values. After this operation, the contents of the MM register will look like this:
@@ -204,7 +204,7 @@ The final part of the code is on line 45:
     addl    $1, -4(%rbp)    # i++
 ```
 
-`mulsd` carries out the multiplication. Note that the `s` implies scalar, so it will multiple the 32-bit value in the first argument and the 32-bit value in the second argument. `movsd` moves a single 32-bit value into a memory location. Finally, the last instruction carries out `i++`. Modify it as follows:
+`mulsd` carries out the multiplication. Note that the `s` implies scalar, so it will multiply the 64-bit value in the first argument and the 64-bit value in the second argument (but only the second halves). `movsd` moves a single 64-bit value into a memory location (only the lower 64-bits of `xmm`, copied into a single 64-bit position in memory). Finally, the last instruction carries out `i++`. Modify it as follows:
 
 ```x86
     mulpd   %xmm1, %xmm0    # Multiply two scalars
@@ -212,7 +212,7 @@ The final part of the code is on line 45:
     addl    $2, -4(%rbp)    # i++
 ```
 
-The `pd` suffix tells the processor that the contents of the MM registers are vectors, not scalars, and will operate on the first halves and then the second halves. This applies to both the multiplication with `mulpd` and storing two values into memory with `movupd` rather than just 1. Note that since each operation does twice the work, we need to increment `i+=2` instead of just one. 
+The `pd` suffix tells the processor that the contents of the MM registers are vectors, not scalars, and it will operate on the first halves and then the second halves. This applies to both the multiplication with `mulpd`, and storing two values into memory with `movupd` rather than just 1. Note that since each operation does twice the work, we need to increment `i+=2` instead of just one. 
 
 ## Part 2 - Assemble, test and bench
 
