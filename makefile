@@ -25,4 +25,4 @@ assemble: myblas.c
 	$(CC) $(FLAGS) -S myblas.s -c $<
 
 clean:
-	rm -f *.o *.out myblas.s
+	rm -f *.o *.out
